@@ -1,4 +1,4 @@
-import { ProductResponse } from "@/models/product-response.model";
+import { ProductResponse } from "@/models/product.model";
 import fetchAPI from "./fetch-api";
 import { productsListUrl } from "./query-urls";
 
