@@ -16,7 +16,6 @@ async function request<T>(
     method,
     headers: {
       "Content-Type": "application/json",
-      authorization: `Bearer Dhruba14`, // ! After testing, remove this hardcoded token
       ...options.headers,
     },
   });
