@@ -89,7 +89,10 @@ const CartScreen = () => {
           </Text>
           <TouchableOpacity
             style={styles.shopButton}
-            onPress={() => router.push("/")}
+            onPress={() => {
+              router.dismissAll();
+              router.replace("/");
+            }}
           >
             <Text style={styles.shopButtonText}>Start Shopping</Text>
           </TouchableOpacity>

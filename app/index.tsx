@@ -9,6 +9,7 @@ import {
   Alert,
   FlatList,
   Image,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -21,30 +22,31 @@ const HomeScreen = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
   useEffect(() => {
     // Filter products based on search query
-    if (searchQuery.trim() === "") {
-      setFilteredProducts(products);
-    } else {
-      const filtered = products.filter(
-        (product) =>
-          product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredProducts(filtered);
-    }
+    const filtered = products.filter(
+      (product) =>
+        product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredProducts(filtered);
   }, [searchQuery, products]);
 
   useEffect(() => {
     getAllProducts();
   }, []);
+
   const getAllProducts = async () => {
     try {
+      if (error) {
+        setError(null);
+      }
       setLoading(true);
       const response = await productService.getAllProducts();
       setProducts(response);
@@ -53,6 +55,21 @@ const HomeScreen = () => {
       setError("Failed to load products");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const response = await productService.getAllProducts();
+      setProducts(response);
+      // Clear any existing errors on successful refresh
+      setError(null);
+    } catch (error) {
+      Alert.alert(error instanceof Error ? error.message : "An error occurred");
+      setError("Failed to refresh products");
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -112,7 +129,7 @@ const HomeScreen = () => {
     </View>
   );
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={colorPalette.foregroundDark} />
@@ -121,7 +138,7 @@ const HomeScreen = () => {
     );
   }
 
-  if (error) {
+  if (error && !refreshing) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.errorText}>{error}</Text>
@@ -165,9 +182,9 @@ const HomeScreen = () => {
         )}
       </View>
 
-      {/* Products List */}
+      {/* Products List with Refresh Control */}
       <FlatList
-        data={filteredProducts}
+        data={searchQuery.trim() === "" ? products : filteredProducts}
         renderItem={renderProductItem}
         keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
@@ -177,6 +194,16 @@ const HomeScreen = () => {
         ]}
         numColumns={2}
         ListEmptyComponent={renderEmptyState}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colorPalette.foregroundDark]}
+            tintColor={colorPalette.foregroundDark}
+            title="Pull to refresh"
+            titleColor={colorPalette.foregroundDark}
+          />
+        }
       />
     </SafeAreaView>
   );
